@@ -12,6 +12,7 @@
 *_LOCAL_*.txt
 *_REMOTE_*.txt
 .vscode
+*.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

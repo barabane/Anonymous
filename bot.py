@@ -1,10 +1,13 @@
 import asyncio
 from bot_settings import bot, dp
-from handlers.user_handlers import router
+from handlers.user_handlers import router as user_router
+from handlers.admin_handlers import router as admin_router
+from database.db import db
 
 
 async def main():
-    dp.include_routers(router)
+    dp.include_routers(admin_router, user_router)
+    db.init()
     await dp.start_polling(bot)
 
 
