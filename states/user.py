@@ -4,4 +4,3 @@ from aiogram.fsm.state import StatesGroup, State
 
 class User(StatesGroup):
     sender = State()
-    reader = State()

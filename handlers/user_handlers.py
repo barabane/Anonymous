@@ -6,11 +6,12 @@ import re
 from loguru import logger
 from bot_settings import bot
 from utils.user_utils import get_sender_id
-from keyboards.user_kybr import write_again_keybr, reply_keybr
+from keyboards.user_kybr import write_again_keybr
 from aiogram.fsm.context import FSMContext
 from utils.admin_utils import new_user_reg
 from database.db import db
 from states.user import User
+from pprint import pprint
 
 
 router = Router()
@@ -24,7 +25,7 @@ async def start_hand(msg: types.Message, command: CommandObject, state: FSMConte
         'user_url': await create_start_link(bot, payload=msg.from_user.id, encode=True),
     })
 
-    if res['status'] == 'success':
+    if res:
         if not msg.from_user.username:
             await new_user_reg(msg.from_user.id)
         else:
@@ -52,18 +53,9 @@ async def send_msg(msg: types.Message, state: FSMContext):
     await state.clear()
 
 
-@router.message(User.reader)
-async def send_reply(msg: types.Message, state: FSMContext):
-    data = await state.get_data()
-    await bot.send_message(data['sender_id'], 'Сообщение отправлено!')
-
-
 @router.callback_query()
 async def cb_handler(cb: types.CallbackQuery, state: FSMContext):
+    logger.info(cb)
     if cb.data == 'again':
-        await cb.answer()
+        await cb.answer('.')
         await bot.send_message(cb.from_user.id, 'Напишите своё сообщение:')
-    # elif re.match('reply', cb.data):
-    #     await state.set_state(User.reader)
-    #     await state.update_data(sender_id=get_sender_id(cb.data))
-    #     return await bot.send_message(cb.from_user.id, 'Напишите сообщение для ответа:')

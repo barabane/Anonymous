@@ -3,10 +3,23 @@ from datetime import datetime
 from loguru import logger
 
 
-class DB:
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(
+                Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class DB(metaclass=Singleton):
     def __init__(self):
-        self.conn = sqlite3.connect('anonymous.db')
-        self.cur = self.conn.cursor()
+        try:
+            self.conn = sqlite3.connect('anonymous.db')
+            self.cur = self.conn.cursor()
+        except sqlite3.Error as Error:
+            logger.error(f'SQL error: {Error}')
 
     def init(self):
         self.cur.execute('''CREATE TABLE IF NOT EXISTS user(
@@ -20,23 +33,17 @@ class DB:
 
     def add_user(self, user):
         is_exists = self.cur.execute(
-            f"SELECT * FROM user WHERE id={user['id']}")
-        logger.info(is_exists)
+            f"SELECT count(1) FROM user WHERE id={user['id']}")
 
         if is_exists.fetchone():
-            return {'status': 'error', 'msg': 'такой пользователь уже существует!'}
+            return False
 
         self.cur.execute(f'''INSERT INTO user(id, username, user_url, reg_date, sent_msgs, rec_msgs) VALUES(
-            '{user['id']}',
-            '{user['username']}',
-            '{user['user_url']}',
-            '{datetime.now()}',
-            '{0}',
-            '{0}'
-        )''')
+            ?,?,?,?,?,?
+        )''', (user['id'], user['username'], user['user_url'], datetime.now(), 0, 0))
         self.conn.commit()
 
-        return {'status': 'success', 'msg': 'пользователь успешно добавлен!'}
+        return True
 
     def get_all_users(self) -> set:
         users = self.cur.execute('SELECT * FROM user')
