@@ -31,19 +31,18 @@ class DB(metaclass=Singleton):
             rec_msgs INT
         )''')
 
-    def add_user(self, user):
+    async def reg_user(self, user):
         is_exists = self.cur.execute(
             f"SELECT count(1) FROM user WHERE id={user['id']}")
 
         if is_exists.fetchone():
-            return False
+            return
 
         self.cur.execute(f'''INSERT INTO user(id, username, user_url, reg_date, sent_msgs, rec_msgs) VALUES(
             ?,?,?,?,?,?
         )''', (user['id'], user['username'], user['user_url'], datetime.now(), 0, 0))
         self.conn.commit()
-
-        return True
+        await self.__reg_user_info(user['username'])
 
     def get_all_users(self) -> set:
         users = self.cur.execute('SELECT * FROM user')
