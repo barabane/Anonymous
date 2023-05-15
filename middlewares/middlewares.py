@@ -1,3 +1,4 @@
+import os
 from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Message
@@ -13,3 +14,14 @@ class UsernameMiddleware(BaseMiddleware):
         if not event.from_user.username:
             return event.answer('Перед использованием бота необходимо установить username')
         return await handler(event, data)
+
+
+class AdminMiddleware(BaseMiddleware):
+    async def __call__(
+            self,
+            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+            event: Message,
+            data: Dict[str, Any]
+    ) -> Any:
+        if str(event.from_user.id) == os.environ.get('ADMIN_ID'):
+            return await handler(event, data)

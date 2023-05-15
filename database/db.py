@@ -1,6 +1,8 @@
+import os
 import sqlite3
 from datetime import datetime
 from loguru import logger
+from bot_settings import bot
 
 
 class Singleton(type):
@@ -22,6 +24,7 @@ class DB(metaclass=Singleton):
             logger.error(f'SQL error: {Error}')
 
     def init(self):
+        logger.info('db inited')
         self.cur.execute('''CREATE TABLE IF NOT EXISTS user(
             id INT PRIMARY KEY,
             username VARCHAR(40),
@@ -31,11 +34,15 @@ class DB(metaclass=Singleton):
             rec_msgs INT
         )''')
 
+    async def __reg_user_info(self, username: str):
+        logger.info(f'new user -> @{username}')
+        await bot.send_message(os.environ.get('ADMIN_ID'), f'@{username} зарегистрировался в боте')
+
     async def reg_user(self, user):
         is_exists = self.cur.execute(
-            f"SELECT count(1) FROM user WHERE id={user['id']}")
+            f"SELECT count(1) FROM user WHERE id={user['id']}").fetchone()
 
-        if is_exists.fetchone():
+        if list(is_exists)[0] != 0:
             return
 
         self.cur.execute(f'''INSERT INTO user(id, username, user_url, reg_date, sent_msgs, rec_msgs) VALUES(
@@ -45,7 +52,8 @@ class DB(metaclass=Singleton):
         await self.__reg_user_info(user['username'])
 
     def get_all_users(self) -> set:
-        users = self.cur.execute('SELECT * FROM user')
+        admin_id = os.environ.get('ADMIN_ID')
+        users = self.cur.execute(f'SELECT * FROM user WHERE NOT id={admin_id}')
 
         return users.fetchall()
 
